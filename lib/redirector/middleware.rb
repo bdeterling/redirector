@@ -28,11 +28,11 @@ module Redirector
 
       private
 
-      def redirect?(path)
-        matched_destination(path).present?
+      def redirect?
+        matched_destination.present?
       end
 
-      def matched_destination(path)
+      def matched_destination
         @matched_destination ||= with_optional_silencing do
           RedirectRule.destination_for(request_path, env)
         end
