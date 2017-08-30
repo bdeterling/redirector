@@ -38,13 +38,13 @@ class RedirectRule < ActiveRecord::Base
   end
 
   def self.preprocess(path)
-    puts "In: [#{path}]"
+    ActiveRecord::Base.logger.error "Redirector In: [#{path}]"
     @preprocessors = nil if path =~ /redirectorclear/
     @preprocessors ||= RedirectRule.where(preprocessor: true)
     @preprocessors.each do |p|
       path.gsub!(Regexp.new(p.source), p.destination)
     end
-    puts "Out: [#{path}]"
+    ActiveRecord::Base.logger.error "Redirector Out: [#{path}]"
     path
   end
 
