@@ -28,11 +28,11 @@ module Redirector
 
       private
 
-      def redirect?
-        matched_destination.present?
+      def redirect?(path)
+        matched_destination(path).present?
       end
 
-      def matched_destination
+      def matched_destination(path)
         @matched_destination ||= with_optional_silencing do
           RedirectRule.destination_for(request_path, env)
         end
@@ -47,10 +47,13 @@ module Redirector
       end
 
       def request_path
-        if Redirector.include_query_in_source
-          env['ORIGINAL_FULLPATH']
-        else
-          env['PATH_INFO']
+        @preprocessed_path ||= begin
+          if Redirector.include_query_in_source
+            original_path = env['ORIGINAL_FULLPATH']
+          else
+            original_path = env['PATH_INFO']
+          end
+          RedirectRule.preprocess(original_path)
         end
       end
 

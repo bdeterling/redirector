@@ -37,13 +37,35 @@ class RedirectRule < ActiveRecord::Base
     SQL
   end
 
+  def self.preprocess(path)
+    puts "In: [#{path}]"
+    @preprocessors = nil if path =~ /redirectorclear/
+    @preprocessors ||= RedirectRule.where(preprocessor: true)
+    @preprocessors.each do |p|
+      path.gsub!(Regexp.new(p.source), p.destination)
+    end
+    puts "Out: [#{path}]"
+    path
+  end
+
   def self.match_for(source, environment)
-    match_scope = where(match_sql_condition.strip, {:true => true, :false => false, :source => source})
-    match_scope = match_scope.order('redirect_rules.source_is_regex ASC, LENGTH(redirect_rules.source) DESC')
-    match_scope = match_scope.includes(:request_environment_rules)
-    match_scope = match_scope.references(:request_environment_rules) if Rails.version.to_i == 4
-    match_scope.detect do |rule|
-      rule.request_environment_rules.all? {|env_rule| env_rule.matches?(environment) }
+    if Redirector.no_regex
+      @rules = nil if source =~ /redirectorclear/
+      @rules ||= {}
+      dest = @rules[source]
+      if dest.nil?
+        dest = where('redirect_rules.active = :true AND source = :source', { :true => true, :source => source}).limit(1).first
+      end
+      @rules[source] = dest
+      dest
+    else
+      match_scope = where(match_sql_condition.strip, {:true => true, :false => false, :source => source})
+      match_scope = match_scope.order('redirect_rules.source_is_regex ASC, LENGTH(redirect_rules.source) DESC')
+      match_scope = match_scope.includes(:request_environment_rules)
+      match_scope = match_scope.references(:request_environment_rules) if Rails.version.to_i == 4
+      match_scope.detect do |rule|
+        rule.request_environment_rules.all? {|env_rule| env_rule.matches?(environment) }
+      end
     end
   end
 
