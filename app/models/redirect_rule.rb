@@ -38,7 +38,7 @@ class RedirectRule < ActiveRecord::Base
   end
 
   def self.preprocess(path)
-    original = path
+    original = path.dup
     @preprocessors = nil if path =~ /redirectorclear/
     @preprocessors ||= RedirectRule.where(preprocessor: true)
     @preprocessors.each do |p|
