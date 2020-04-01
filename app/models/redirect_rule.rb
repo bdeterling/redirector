@@ -41,8 +41,10 @@ class RedirectRule < ActiveRecord::Base
     original = path.dup
     @preprocessors = nil if path =~ /redirectorclear/
     @preprocessors ||= RedirectRule.where(preprocessor: true)
+    # Note that as of the new rack, path is frozen so you can't 
+    # use gsub!
     @preprocessors.each do |p|
-      path.gsub!(Regexp.new(p.source), p.destination)
+      path = path.gsub(Regexp.new(p.source), p.destination)
     end
     if original != path
       ActiveRecord::Base.logger.error "Redirector In: [#{original}] Out: [#{path}]"
